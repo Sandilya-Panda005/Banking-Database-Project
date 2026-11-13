@@ -22,15 +22,5 @@ MySQL 8.0 | Triggers | Events | Stored Procedures | Window Functions | CTEs
 
 
 
-## How to Run
-1.Locate the app.py and requirements.txt in a specific folder
-2.pip install -r requirements.txt in macOs terminal
-3.By opening app.py edit the password :
-DB_CONFIG = {
-    "host": "localhost",
-    "port": 3306,
-    "user": "root",
-    "password": "YOUR_MYSQL_PASSWORD",   # <-- put your real Workbench password here
-    "database": "BankSystem",
-}
-4.streamlit run app.py
+##Website Link(Deployed):
+https://banking-database-project-ehtljwrtuu6h5dbgazxebt.streamlit.app
