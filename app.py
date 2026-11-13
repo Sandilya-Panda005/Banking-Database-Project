@@ -3,7 +3,7 @@ Pawnee Trust & Ledger — Live Dashboard
 Connects directly to your MySQL BankSystem database.
 Run with:  streamlit run app.py
 """
-
+import os
 import streamlit as st
 import pandas as pd
 import mysql.connector
@@ -13,12 +13,14 @@ from mysql.connector import Error
 # DATABASE CONNECTION
 # ============================================================
 # Edit these to match your MySQL Workbench connection settings.
+# Credentials come from Streamlit Secrets (never hard-code passwords).
 DB_CONFIG = {
-    "host": "localhost",
-    "port": 3306,
-    "user": "root",
-    "password": "monamoon",   # <-- change this
-    "database": "BankSystem",
+    "host": st.secrets["DB_HOST"],
+    "port": int(st.secrets["DB_PORT"]),
+    "user": st.secrets["DB_USER"],
+    "password": st.secrets["DB_PASSWORD"],
+    "database": st.secrets["DB_NAME"],
+    "ssl_ca": os.path.join(os.path.dirname(__file__), "ca.pem"),
 }
 
 

@@ -1,7 +1,6 @@
--- CREATING DATABASE AND TABLES
-CREATE DATABASE BankSystem;
-USE BankSystem;
+USE defaultdb;
 
+-- CREATING TABLES
 CREATE TABLE Customers (
     customer_id INT AUTO_INCREMENT PRIMARY KEY,
     first_name VARCHAR(50),
@@ -47,8 +46,7 @@ CREATE TABLE Account_Audit (
 );
 
 
--- CREATING THE TRIGGERS AND EVENTS FOR THE UPCOMING DATA TO BE INSERTED
--- TRIGGER 1 FOR AUTO UPDATION OF BALANCE ON TRANSACTION + AUDIT LOG
+-- TRIGGER 1: AUTO UPDATE OF BALANCE ON TRANSACTION + AUDIT LOG
 DELIMITER $$
 CREATE TRIGGER trg_update_balance
 AFTER INSERT ON Transactions
@@ -68,7 +66,7 @@ BEGIN
 END$$
 DELIMITER ;
 
--- TRIGGER 2 FRAUD DETECTION WITH LARGE WITHDRAWAL FLAG
+-- TRIGGER 2: FRAUD DETECTION WITH LARGE WITHDRAWAL FLAG
 DELIMITER $$
 CREATE TRIGGER trg_fraud_check
 AFTER INSERT ON Transactions
@@ -82,9 +80,7 @@ END$$
 DELIMITER ;
 
 
--- EVENT -MONTHLY INTEREST CREDIT 
-
-
+-- EVENT: MONTHLY INTEREST CREDIT
 DELIMITER $$
 CREATE EVENT evt_monthly_interest
 ON SCHEDULE EVERY 1 MONTH
@@ -97,12 +93,12 @@ END$$
 DELIMITER ;
 
 
--- PROCEDURES TRANSFER MONEYBETWEEN ACCOUNTS(WITH VALIDATION)
-
+-- PROCEDURE: TRANSFER MONEY BETWEEN ACCOUNTS (WITH VALIDATION)
+-- FIXED: the trigger already updates balances, so only transactions are inserted here
 DELIMITER $$
 CREATE PROCEDURE TransferFunds(
-    IN from_acc INT, 
-    IN to_acc INT, 
+    IN from_acc INT,
+    IN to_acc INT,
     IN amt DECIMAL(12,2)
 )
 BEGIN
@@ -110,12 +106,9 @@ BEGIN
     SELECT balance INTO sender_balance FROM Accounts WHERE account_id = from_acc;
 
     IF sender_balance >= amt THEN
-        UPDATE Accounts SET balance = balance - amt WHERE account_id = from_acc;
-        UPDATE Accounts SET balance = balance + amt WHERE account_id = to_acc;
-        
         INSERT INTO Transactions(account_id, transaction_type, amount) VALUES (from_acc, 'Withdrawal', amt);
         INSERT INTO Transactions(account_id, transaction_type, amount) VALUES (to_acc, 'Deposit', amt);
-        
+
         SELECT 'Transfer successful' AS message;
     ELSE
         SELECT 'Insufficient funds' AS message;
@@ -123,12 +116,10 @@ BEGIN
 END$$
 DELIMITER ;
 
+
 -- DATA INSERTION
-USE BankSystem;
- 
 
 -- CUSTOMERS (15)
-
 INSERT INTO Customers (first_name, last_name, dob, email) VALUES
 ('Leslie',   'Knope',      '1975-01-18', 'leslie.knope@email.com'),
 ('Ron',      'Swanson',    '1965-03-02', 'ron.swanson@email.com'),
@@ -145,32 +136,29 @@ INSERT INTO Customers (first_name, last_name, dob, email) VALUES
 ('Perd',     'Hapley',     '1976-10-02', 'perd.hapley@email.com'),
 ('Joan',     'Callamezzo', '1972-06-16', 'joan.callamezzo@email.com'),
 ('Dennis',   'Feinstein',  '1968-01-29', 'dennis.feinstein@email.com');
- 
--- 
--- ACCOUNTS (18) — some customers hold 2 accounts
+
+-- ACCOUNTS (18)
 INSERT INTO Accounts (customer_id, account_type, balance, interest_rate) VALUES
-(1,  'Savings',  15000.00, 0.035),  -- 1  Leslie
-(1,  'Checking',  4200.00, 0.000),  -- 2  Leslie
-(2,  'Savings',  92000.00, 0.030),  -- 3  Ron
-(3,  'Checking',  1800.00, 0.000),  -- 4  Tom
-(4,  'Savings',   6700.00, 0.032),  -- 5  April
-(5,  'Checking', 23000.00, 0.000),  -- 6  Ben
-(6,  'Savings',  41000.00, 0.030),  -- 7  Ann
-(7,  'Savings',  78500.00, 0.028),  -- 8  Donna
-(8,  'Checking',   950.00, 0.000),  -- 9  Andy
-(9,  'Savings', 120000.00, 0.025),  -- 10 Jerry
-(10, 'Checking', 15600.00, 0.000),  -- 11 Chris
-(11, 'Savings',   8900.00, 0.031),  -- 12 Mark
-(12, 'Checking',  5400.00, 0.000),  -- 13 Shauna
-(13, 'Savings',  33000.00, 0.029),  -- 14 Perd
-(14, 'Checking',  2100.00, 0.000),  -- 15 Joan
-(15, 'Savings',  57000.00, 0.030),  -- 16 Dennis
-(2,  'Checking', 11000.00, 0.000),  -- 17 Ron (2nd account)
-(9,  'Checking',  9800.00, 0.000);  -- 18 Jerry (2nd account)
- 
--- TRANSACTIONS (55) — spread across ~6 weeks, varied amounts
--- Two intentionally large withdrawals (>50000) to trigger
--- trg_fraud_check
+(1,  'Savings',  15000.00, 0.035),
+(1,  'Checking',  4200.00, 0.000),
+(2,  'Savings',  92000.00, 0.030),
+(3,  'Checking',  1800.00, 0.000),
+(4,  'Savings',   6700.00, 0.032),
+(5,  'Checking', 23000.00, 0.000),
+(6,  'Savings',  41000.00, 0.030),
+(7,  'Savings',  78500.00, 0.028),
+(8,  'Checking',   950.00, 0.000),
+(9,  'Savings', 120000.00, 0.025),
+(10, 'Checking', 15600.00, 0.000),
+(11, 'Savings',   8900.00, 0.031),
+(12, 'Checking',  5400.00, 0.000),
+(13, 'Savings',  33000.00, 0.029),
+(14, 'Checking',  2100.00, 0.000),
+(15, 'Savings',  57000.00, 0.030),
+(2,  'Checking', 11000.00, 0.000),
+(9,  'Checking',  9800.00, 0.000);
+
+-- TRANSACTIONS (53)
 INSERT INTO Transactions (account_id, transaction_type, amount, transaction_date) VALUES
 (1,  'Deposit',    2000.00, '2026-07-01 09:15:00'),
 (2,  'Withdrawal',  500.00, '2026-07-01 14:22:00'),
@@ -228,7 +216,9 @@ INSERT INTO Transactions (account_id, transaction_type, amount, transaction_date
 (1,  'Deposit',    1900.00, '2026-07-28 09:00:00'),
 (5,  'Deposit',    2600.00, '2026-07-28 12:45:00'),
 (9,  'Withdrawal', 3300.00, '2026-07-29 15:00:00');
- 
+
+
+-- ANALYTICS QUERIES
 
 -- Running balance per account over time
 SELECT account_id, transaction_date, amount,
@@ -244,7 +234,7 @@ GROUP BY c.customer_id;
 
 -- MONTHLY TRANSACTION SUMMARY
 WITH Monthly_Summary AS (
-    SELECT account_id, 
+    SELECT account_id,
            DATE_FORMAT(transaction_date, '%Y-%m') AS month,
            SUM(amount) AS total_amount
     FROM Transactions
